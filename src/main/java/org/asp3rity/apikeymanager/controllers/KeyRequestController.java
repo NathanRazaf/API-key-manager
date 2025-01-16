@@ -12,8 +12,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.web.client.RestTemplate;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import static org.asp3rity.apikeymanager.helpers.JsonPropParser.getDateFromPath;
+import static org.asp3rity.apikeymanager.helpers.JsonPropParser.getStringFromPath;
 
 @RestController
 
@@ -21,55 +23,6 @@ import java.util.Date;
 public class KeyRequestController {
     private final RestTemplate restTemplate = new RestTemplate();
     private static final Logger logger = LoggerFactory.getLogger(KeyRequestController.class);
-
-    private Result<?> getJsonPropFromPath(JsonNode root, String path) {
-        String[] pathParts = path.split("/");
-        JsonNode currNode = root;
-        for (String part : pathParts) {
-            if (currNode == null) {
-                return new Result<>(null, "Path not found");
-            }
-            currNode = currNode.get(part);
-        }
-        return new Result<>(currNode, "Success");
-    }
-
-    private Result<String> getStringFromPath(JsonNode root, String path) {
-        Result<?> result = getJsonPropFromPath(root, path);
-        if (result.value() == null) {
-            return new Result<>(null, result.message());
-        }
-
-        JsonNode node = (JsonNode) result.value();
-        if (node.isTextual()) {
-            String value = node.asText();
-            return new Result<>(value, "Success");
-        }
-
-        return new Result<>(null, "Value is not a string. Found type: " + node.getNodeType());
-    }
-
-    private Result<Date> getDateFromPath(JsonNode root, String path, String datePattern) {
-        Result<?> result = getJsonPropFromPath(root, path);
-        if (result.value() == null) {
-            return new Result<>(null, result.message());
-        }
-        JsonNode node = (JsonNode) result.value();
-        if (node.isTextual()) {
-            try {
-                SimpleDateFormat dateFormat = new SimpleDateFormat(datePattern);
-                Date date = dateFormat.parse(node.asText());
-                return new Result<>(date, "Success");
-            } catch (Exception e) {
-                return new Result<>(null, "Could not parse date: " + e.getMessage());
-            }
-        }
-        return new Result<>(null, "Value is not a date string");
-    }
-
-    private Result<Date> getDateFromPath(JsonNode root, String path) {
-        return getDateFromPath(root, path, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-    }
 
     // POST body-response template
     @PostMapping("/new")
@@ -120,7 +73,7 @@ public class KeyRequestController {
         try {
             logger.info("Received raw request: {}", request);
 
-            ResponseEntity<JsonNode> response = setupApiKeyRequest(request);;
+            ResponseEntity<JsonNode> response = setupApiKeyRequest(request);
 
             logger.info("Received raw response: {}", response.getBody());
 
