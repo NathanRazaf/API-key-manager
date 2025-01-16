@@ -70,6 +70,7 @@ public class KeyRequestController {
     private Result<Date> getDateFromPath(JsonNode root, String path) {
         return getDateFromPath(root, path, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
     }
+
     // POST body-response template
     @PostMapping("/new")
     public ResponseEntity<ApiKey> requestApiKey(@RequestBody ApiKeyRequest request) {
@@ -77,22 +78,7 @@ public class KeyRequestController {
             logger.info("Received request: {}", request);  // Log the incoming request
             // Make the request to the API
             // Setup the request
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
-            // Create the request entity with the external body
-            HttpEntity<JsonNode> requestEntity = new HttpEntity<>(request.requestBody(), headers);
-
-            logger.info("Sending request to: {}", request.URL() + request.path());
-            logger.info("With body: {}", request.requestBody());
-
-            // Make the actual HTTP request to the external API
-            ResponseEntity<JsonNode> response = restTemplate.exchange(
-                    request.URL() + request.path(),
-                    HttpMethod.POST,
-                    requestEntity,
-                    JsonNode.class
-            );
+            ResponseEntity<JsonNode> response = setupApiKeyRequest(request);
 
             logger.info("Received response: {}", response.getBody());
 
@@ -127,6 +113,42 @@ public class KeyRequestController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    @PostMapping("/new/raw")
+    public ResponseEntity<JsonNode> requestApiKeyRaw(@RequestBody ApiKeyRequest request) {
+        try {
+            logger.info("Received raw request: {}", request);
+
+            ResponseEntity<JsonNode> response = setupApiKeyRequest(request);;
+
+            logger.info("Received raw response: {}", response.getBody());
+
+            // Return the raw response
+            return ResponseEntity.status(response.getStatusCode())
+                    .headers(response.getHeaders())
+                    .body(response.getBody());
+        } catch (Exception e) {
+            logger.error("Error in raw request: ", e);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    private ResponseEntity<JsonNode> setupApiKeyRequest(@RequestBody ApiKeyRequest request) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<JsonNode> requestEntity = new HttpEntity<>(request.requestBody(), headers);
+
+        logger.info("Sending request to: {}", request.URL() + request.path());
+        logger.info("With body: {}", request.requestBody());
+
+        return restTemplate.exchange(
+                request.URL() + request.path(),
+                HttpMethod.POST,
+                requestEntity,
+                JsonNode.class
+        );
     }
 }
 

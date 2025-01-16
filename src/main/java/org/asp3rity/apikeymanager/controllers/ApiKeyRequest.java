@@ -15,15 +15,22 @@ import com.fasterxml.jackson.databind.JsonNode;
 public record ApiKeyRequest(String URL, String path, String keyPath, String ownerPath, String createdAtPath,
                             String dateFormat, JsonNode requestBody) {
 
+    private static final String PLACEHOLDER_PATH = "placeholder";
+
     // Compact constructor to handle null dateFormat
     public ApiKeyRequest {
         if (dateFormat == null) {
-            dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"; // Default ISO 8601 format
+            dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"; // Default ISO 8601 format
         }
     }
 
     public ApiKeyRequest(String URL, String path, String keyPath, String ownerPath, String createdAtPath,
                          JsonNode requestBody) {
         this(URL, path, keyPath, ownerPath, createdAtPath, null, requestBody);
+    }
+
+    // Constructor for raw requests where only URL, path and requestBody are needed
+    public ApiKeyRequest(String URL, String path, JsonNode requestBody) {
+        this(URL, path, PLACEHOLDER_PATH, PLACEHOLDER_PATH, PLACEHOLDER_PATH, null, requestBody);
     }
 }
